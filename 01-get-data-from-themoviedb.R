@@ -25,6 +25,6 @@ for(i in 500:505) {
                         this_data_frame)
 }
 
-write_csv(all_data, "themoviedb-api-data.csv")
+write_csv(all_data, "data/themoviedb-api-data.csv")
 
 
