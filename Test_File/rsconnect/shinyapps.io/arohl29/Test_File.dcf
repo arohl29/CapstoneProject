@@ -1,0 +1,13 @@
+name: Test_File
+title: Test_File
+username:
+account: arohl29
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5729440
+bundleId: 5615245
+url: https://arohl29.shinyapps.io/Test_File/
+when: 1645741168.81918
+lastSyncTime: 1645741168.81918
+asMultiple: FALSE
+asStatic: FALSE
