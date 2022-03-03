@@ -33,6 +33,7 @@ ui <- fluidPage(title = "Recommendations",
         radioButtons("movieSeries", "Movies and/or Series?",
                      c("Movies" = "movies", "Series" = "series",
                        "Both" = "both")),
+        
         #Option to look for an actor/actress
         textInput("actor", "Actor in Movie/Series (Optional)",
                   placeholder = "Enter actor"),
@@ -43,20 +44,16 @@ ui <- fluidPage(title = "Recommendations",
         checkboxGroupInput("ratings", "Movie Rating",
                             choices = c("G", "PG", "PG-13", "R"))
       ),
-      submitButton("Search!")
+      submitButton("Search!") # Need to center button
       # actionButton() can be used to reset values?
     ),
       
     mainPanel(
       textOutput("test"),
-      textOutput("person")
+      textOutput("person"),
+      textOutput("rating")
     )
   )
-    
-        # Show a plot of the generated distribution
-        # mainPanel(
-        #    plotOutput("distPlot")
-        # )
 )
 
 # Define server logic required to draw a histogram
@@ -76,16 +73,11 @@ server <- function(input, output) {
                                   series = "Looking for series",
                                   both = "Looking for both"))
   
-  output$person <- renderText(paste("Looking for: ",input$actor))
+  output$rating <- renderText(paste("Ratings: ",input$ratings)) # Vector of choices
+                              #columnName %in% input$ratings -> do something
   
-    # output$distPlot <- renderPlot({
-    #     # generate bins based on input$bins from ui.R
-    #     x    <- faithful[, 2]
-    #     bins <- seq(min(x), max(x), length.out = input$bins + 1)
-    # 
-    #     # draw the histogram with the specified number of bins
-    #     hist(x, breaks = bins, col = 'darkgray', border = 'white')
-    # })
+  output$person <- renderText(paste("Looking for: ",input$actor))
+
 }
 
 # Run the application 
