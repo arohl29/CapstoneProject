@@ -10,7 +10,10 @@
 library(shiny)
 library(tidyverse)
 library(bslib)
-
+data <- read.csv("data/themoviedb-api-data.csv")
+glimpse(data)
+timerange <- data$runtime[order(data$runtime)]
+range1 <- timerange[0:10]
 # Define UI for application
 ui <- fluidPage(title = "Recommendations",
   theme = bslib::bs_theme(bootswatch = "solar"),
@@ -38,11 +41,13 @@ ui <- fluidPage(title = "Recommendations",
         textInput("actor", "Actor in Movie/Series (Optional)",
                   placeholder = "Enter actor"),
         
-        numericInput("time", "Time available (in hours)", 0,
-                    min = 0, max = 10), # maybe drop-down list, or slider?
+        sliderInput("time", "Time available (in hours)",
+                    min = 0, max = 120,value = 0), # maybe drop-down list, or slider?
         
         checkboxGroupInput("ratings", "Movie Rating",
-                            choices = c("G", "PG", "PG-13", "R"))
+                            choices = c("G", "PG", "PG-13", "R")),
+        checkboxGroupInput("popular", "Popular Rating",
+                           choices = c("1", "2", "3", "4"))
       ),
       submitButton("Search!") # Need to center button
       # actionButton() can be used to reset values?
@@ -51,14 +56,17 @@ ui <- fluidPage(title = "Recommendations",
     mainPanel(
       textOutput("test"),
       textOutput("person"),
-      textOutput("rating")
+      textOutput('time'),
+      textOutput("rating"),
+      textOutput('popular')
+      
     )
   )
 )
 
+
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-
   output$welcome <- renderText("Welcome to our Movie/Series Recommendation System!
                      Please fill out the information below so that we can
                      give you recommendations based on your choices. Some
@@ -72,11 +80,17 @@ server <- function(input, output) {
                                   movies = "Looking for movies",
                                   series = "Looking for series",
                                   both = "Looking for both"))
-  
+  output$time <- renderText(if (input$time == 0){
+    paste(range1)
+  })
   output$rating <- renderText(paste("Ratings: ",input$ratings)) # Vector of choices
                               #columnName %in% input$ratings -> do something
   
   output$person <- renderText(paste("Looking for: ",input$actor))
+  output$popular <- renderText(if (input$popular == '1'){
+    paste(data$popularity)
+  } )
+  
 
 }
 
