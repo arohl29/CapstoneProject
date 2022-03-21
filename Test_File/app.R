@@ -91,6 +91,7 @@ data_search <- function(movie_or_series) {
     # Process both files for series and movies
   }
   
+  # Need to check how to pass app elements (vectors) as parameters in functions
   if ((file$vote_average %in% ratings) && (file$runtime %in% time*60)) {
     renderText(paste(file$title), sep = "\n")
   }
@@ -111,7 +112,7 @@ server <- function(input, output) {
   
   # Depending on choice, process data frames (movies or series, or both)
   # Call data processing function
-  output$test <- data_search("movies")
+  #output$test <- data_search("movies")
   # Might need to make ui elements as global to be able to use them
   # (if it is possible)
   
