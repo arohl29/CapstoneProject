@@ -15,22 +15,22 @@ library(bslib)
 movie_data <- read.csv("data/themoviedb-api-data.csv")
 tv_data <- read.csv("data/themoviedb-tv-data.csv")
 
-glimpse(movie_data)
-glimpse(tv_data)
+#glimpse(movie_data)
+#glimpse(tv_data)
 timerange <- movie_data$runtime[order(movie_data$runtime)]
 range1 <- timerange[0:10]
-timerange <- tv_data$runtime[order(tv_data$runtime)]
+timerange <- tv_data$runtime[order(tv_data$episode_run_time3)]
 range2 <- timerange[0:10]
 
 # Define UI for application
 ui <- fluidPage(title = "Recommendations",
-  theme = bslib::bs_theme(bootswatch = "solar"),
+  theme = bslib::bs_theme(version = 5, bootswatch = "quartz"),
 
   # Application title
-  titlePanel("Watch Recommendations"),
+  titlePanel("Now Showing"),
 
   # Sidebar with different input button options
-  sidebarLayout(
+  sidebarLayout(position = "left",
     sidebarPanel(
       wellPanel(
         textOutput("welcome"), class = "btn-lg" # Welcome message (instructions?)
@@ -48,9 +48,9 @@ ui <- fluidPage(title = "Recommendations",
         
         # Can be multiplied when processing
         # Time in data is in minutes (double)
-        sliderInput("time", "Time available (in hours)",
-                    min = 0, max = 120, value = c(0, 120)), # maybe drop-down list, or
-                                                    # slider?
+        sliderInput("time", "Time available (in minutes)",
+                    min = 15, max = 180, value = c(15, 180),
+                    step = 15),
         
         checkboxGroupInput("ratings", "Age Rating",
                             choices = c("G", "PG", "PG-13", "R")),
@@ -64,43 +64,51 @@ ui <- fluidPage(title = "Recommendations",
     ),
       
     mainPanel(
-      textOutput("test"),
-      textOutput("person"),
-      textOutput("time"),
-      textOutput("rating"),
-      textOutput("popular")
+      textOutput("movieSeries"),
+      htmlOutput("tester"),
+      htmlOutput("time"),
+      textOutput("path")
     )
   )
 )
 
+url_start <- "https://image.tmdb.org/t/p/w500"
+
 # This function will take whichever radio option is used and
 # based on that go through either or both data files to get
 # the titles of the movies and/or series
-data_search <- function(movie_or_series) {
-  file = NA
-  if (length(movie_or_series) == 1) {
-    if ("movies" %in% movie_or_series){
-      renderText("Looking for movies.")
-      file = movie_data
-    }
-    if ("series" %in% movie_or_series) {
-      renderText("Looking for series.")
-      file = tv_data
-    } 
-  } else {
-    # Process both files for series and movies
-  }
+# data_search <- function(movie_or_series) {
+#   file = NA
+#   if (length(movie_or_series) == 1) {
+#     if ("movies" %in% movie_or_series){
+#       renderText("Looking for movies.")
+#       file = movie_data
+#     }
+#     if ("series" %in% movie_or_series) {
+#       renderText("Looking for series.")
+#       file = tv_data
+#     } 
+#   } else {
+#     # Process both files for series and movies
+#   }
   
   # Need to check how to pass app elements (vectors) as parameters in functions
-  if ((file$vote_average %in% ratings) && (file$runtime %in% time*60)) {
-    renderText(paste(file$title), sep = "\n")
-  }
+  # if ((file$vote_average %in% ratings) && (file$runtime %in% time*60)) {
+  #   renderText(paste(file$title), sep = "\n")
+  # }
   
-}
+#}
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
 
+  file = reactiveVal(NA)
+  end_url = reactiveVal()
+  
+  output$path <- renderText(if(movie_data$id == 1){
+    paste(movie_data$id)
+  })
+  
   output$welcome <- renderText("Welcome to our Movie/Series Recommendation System!
                      Please fill out the information below so that we can
                      give you recommendations based on your choices. Some
@@ -108,27 +116,67 @@ server <- function(input, output) {
                      and your time available which will give you movies
                      or series of any duration length.")
   
-  #activateApp <- eventReactive()
-  
   # Depending on choice, process data frames (movies or series, or both)
   # Call data processing function
-  #output$test <- data_search("movies")
   # Might need to make ui elements as global to be able to use them
   # (if it is possible)
+  #output$test <- data_search("movies")
   
-  output$time <- renderText(if (input$time == 0){
-    paste(range1, "\n", range2)
+  # observeEvent(input$movieSeries,{
+  #   if (length(input$movieSeries == 1)){
+  #     if (input$movieSeries == "Movies"){
+  #       file(movie_data)
+  #       id_only <- movie_data %>% 
+  #         select(id,poster_path) %>% 
+  #         group_by(id)
+  #       path1 = id_only$poster_path[2]
+  #       post_url = paste0("https://image.tmdb.org/t/p/w500",path1)
+  #       end_url(post_url)
+  #     }
+  #     else if (input$movieSeries == "Series") {
+  #       file(tv_data)
+  #       id_only <- tv_data %>% 
+  #         select(id,poster_path) %>% 
+  #         group_by(id)
+  #       path1 = id_only$poster_path[2]
+  #       post_url = paste0("https://image.tmdb.org/t/p/w500",path1)
+  #       end_url(post_url)
+  #     } else {
+  #       paste("sad day")
+  #       # Process both files for series and movies
+  #     }
+  #   }
+  #   output$movieSeries <- renderText(paste(end_url()))
+  # 
+  #   output$tester <- renderText({c('<img src="',end_url(),'">')
+  #   })
+  # })
+    
+  output$tester <- renderText(if (input$time == 0){
+    # Work with both files
+  } else if (input$movieSeries == "Series") {
+    
+    tv_data %>%
+      filter(episode_run_time <= input$time[2] & episode_run_time > input$time[1]
+             & popularity <= input$popular[2] & popularity > input$popular[1]) %>%
+      arrange(episode_run_time) %>%
+      mutate(name = paste0('<img src="https://image.tmdb.org/t/p/w500',
+                           poster_path,'" width=50> ',name," -",episode_run_time,
+                           " minutes, Popularity: ", popularity,"<br>")) %>%
+      pull(name)
+    
+  } else if (input$movieSeries == "Movies") {
+    
+    movie_data %>%
+      filter(runtime <= input$time[2] & runtime > input$time[1]
+             & popularity <= input$popular[2] & popularity > input$popular[1]) %>%
+      arrange(runtime) %>%
+      mutate(title = paste0('<img src="https://image.tmdb.org/t/p/w500',
+                            poster_path,'" width=50> ',title," -",runtime,
+                            " minutes, Popularity: ", popularity,"<br>")) %>%
+      pull(title)
+    
   })
-  
-  output$rating <- renderText(input$ratings) # Vector of choices
-                              #columnName %in% input$ratings -> do something
-  
-  #output$person <- renderText(paste("Looking for: ",input$actor))
-  
-  #output$popular <- renderText(if (input$popular == '1'){
-  #  paste(data$popularity)
-  #})
-
 }
 
 # Run the application 
