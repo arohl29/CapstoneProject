@@ -43,8 +43,8 @@ ui <- fluidPage(title = "Recommendations",
         
         # Option to look for an actor/actress
         # Might need to remove this option (current API doesn't have this info)
-        textInput("actor", "Actor in Movie/Series (Optional)",
-                  placeholder = "Enter actor"),
+        # textInput("actor", "Actor in Movie/Series (Optional)",
+        #           placeholder = "Enter actor"),
         
         # Can be multiplied when processing
         # Time in data is in minutes (double)
@@ -52,8 +52,8 @@ ui <- fluidPage(title = "Recommendations",
                     min = 15, max = 180, value = c(15, 180),
                     step = 15),
         
-        checkboxGroupInput("ratings", "Age Rating",
-                            choices = c("G", "PG", "PG-13", "R")),
+        # checkboxGroupInput("ratings", "Age Rating",
+        #                     choices = c("G", "PG", "PG-13", "R")),
         
         # Rating can be done as a slider that allows for range
         sliderInput("popular", "Movie/Series Rating",
@@ -65,9 +65,7 @@ ui <- fluidPage(title = "Recommendations",
       
     mainPanel(
       textOutput("movieSeries"),
-      htmlOutput("tester"),
-      htmlOutput("time"),
-      textOutput("path")
+      htmlOutput("tester")
     )
   )
 )
@@ -105,22 +103,11 @@ server <- function(input, output) {
   file = reactiveVal(NA)
   end_url = reactiveVal()
   
-  output$path <- renderText(if(movie_data$id == 1){
-    paste(movie_data$id)
-  })
-  
   output$welcome <- renderText("Welcome to our Movie/Series Recommendation System!
                      Please fill out the information below so that we can
-                     give you recommendations based on your choices. Some
-                     of the choices are optional, such as the Actor Name,
-                     and your time available which will give you movies
-                     or series of any duration length.")
-  
-  # Depending on choice, process data frames (movies or series, or both)
-  # Call data processing function
-  # Might need to make ui elements as global to be able to use them
-  # (if it is possible)
-  #output$test <- data_search("movies")
+                     give you recommendations based on your choices. Runtime for
+                     series is given by episode runtime, so you might want a smaller
+                     lower range for series!")
   
   # observeEvent(input$movieSeries,{
   #   if (length(input$movieSeries == 1)){
@@ -151,29 +138,55 @@ server <- function(input, output) {
   #   output$tester <- renderText({c('<img src="',end_url(),'">')
   #   })
   # })
-    
-  output$tester <- renderText(if (input$time == 0){
-    # Work with both files
-  } else if (input$movieSeries == "Series") {
+
+  # Depending on choice, process data frames (movies or series, or both)
+  # Need a way to filter out adult movies. Some are not marked as such so we
+  # need to find a pattern in a column, maybe genres being NA can be used
+  # to filter those out
+  output$tester <- renderText(if (input$movieSeries == "Series"){
     
     tv_data %>%
       filter(episode_run_time <= input$time[2] & episode_run_time > input$time[1]
-             & popularity <= input$popular[2] & popularity > input$popular[1]) %>%
+             & vote_average <= input$popular[2] & vote_average > input$popular[1]
+             & adult == FALSE) %>%
       arrange(episode_run_time) %>%
       mutate(name = paste0('<img src="https://image.tmdb.org/t/p/w500',
-                           poster_path,'" width=50> ',name," -",episode_run_time,
-                           " minutes, Popularity: ", popularity,"<br>")) %>%
+                           poster_path,'" width=100> ',name," -",episode_run_time,
+                           " minutes, Popularity: ", vote_average,"<br>")) %>%
       pull(name)
     
   } else if (input$movieSeries == "Movies") {
     
     movie_data %>%
       filter(runtime <= input$time[2] & runtime > input$time[1]
-             & popularity <= input$popular[2] & popularity > input$popular[1]) %>%
+             & vote_average <= input$popular[2] & vote_average > input$popular[1]
+             & adult == FALSE) %>%
       arrange(runtime) %>%
       mutate(title = paste0('<img src="https://image.tmdb.org/t/p/w500',
-                            poster_path,'" width=50> ',title," -",runtime,
-                            " minutes, Popularity: ", popularity,"<br>")) %>%
+                            poster_path,'" width=100> ',title," -",runtime,
+                            " minutes, Popularity: ", vote_average,"<br>")) %>%
+      pull(title)
+    
+  } else { # This could be changed, having no options will still run something
+    # Might put these as separate functions to avoid repeating code (if possible)
+    tv_data %>%
+      filter(episode_run_time <= input$time[2] & episode_run_time > input$time[1]
+             & vote_average <= input$popular[2] & vote_average > input$popular[1]
+             & adult == FALSE) %>%
+      arrange(episode_run_time) %>%
+      mutate(name = paste0('<img src="https://image.tmdb.org/t/p/w500',
+                           poster_path,'" width=100> ',name," -",episode_run_time,
+                           " minutes, Popularity: ", vote_average,"<br>")) %>%
+      pull(name)
+    
+    movie_data %>%
+      filter(runtime <= input$time[2] & runtime > input$time[1]
+             & vote_average <= input$popular[2] & vote_average > input$popular[1]
+             & adult == FALSE) %>%
+      arrange(runtime) %>%
+      mutate(title = paste0('<img src="https://image.tmdb.org/t/p/w500',
+                            poster_path,'" width=100> ',title," -",runtime,
+                            " minutes, Popularity: ", vote_average,"<br>")) %>%
       pull(title)
     
   })
