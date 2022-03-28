@@ -20,7 +20,8 @@ tv_data <- read.csv("data/themoviedb-tv-data.csv")
 timerange <- movie_data$runtime[order(movie_data$runtime)]
 range1 <- timerange[0:10]
 timerange <- tv_data$runtime[order(tv_data$episode_run_time3)]
-range2 <- timerange[0:10]
+range2 <- timerange
+
 
 # Define UI for application
 ui <- fluidPage(
@@ -50,7 +51,7 @@ ui <- fluidPage(
         # Can be multiplied when processing
         # Time in data is in minutes (double)
         sliderInput("time", "Time available (in hours)",
-                    min = 1, max = 120, value = c(1, 120)), # maybe drop-down list, or
+                    min = 1, max = 10, value = c(1, 10),step = .5), # maybe drop-down list, or
                                                     # slider?
         
         checkboxGroupInput("ratings", "Age Rating",
@@ -68,7 +69,7 @@ ui <- fluidPage(
       textOutput ("movieSeries"),
       htmlOutput("tester"),
       textOutput("person"),
-      textOutput("time"),
+      htmlOutput("time"),
       textOutput("rating"),
       textOutput("popular"),
       textOutput("path")
@@ -96,6 +97,7 @@ server <- function(input, output) {
 
   file = reactiveVal(NA)
   end_url = reactiveVal()
+  time = reactiveVal(0)
 
   
   output$path <- renderText(if(movie_data$id == 1){
@@ -157,11 +159,21 @@ server <- function(input, output) {
   
   output$tester <- renderText({c('<img src="',end_url(),'">')
    })
-  })
   
-  output$time <- renderText(if (input$time == 0){
-    paste(range1, "\n", range2)
-  })
+
+  
+  
+  
+  output$time <- renderText(
+    if (input$time == 0){
+    paste(range1, "\n", range2)}
+      else {
+        tv_data %>%
+          filter(episode_run_time <= input$time[2] & episode_run_time < input$time[1]) %>% 
+          arrange(episode_run_time) %>%
+          mutate(name = paste(name,"-",episode_run_time,"<br>")) %>%
+          pull(name)
+      })
   
   output$rating <- renderText(input$ratings) # Vector of choices
                               #columnName %in% input$ratings -> do something
@@ -171,8 +183,6 @@ server <- function(input, output) {
   output$popular <- renderText(if (input$popular == '1'){
     paste(movie_data$popularity)
   })
-
-}
-
+  }
 # Run the application 
 shinyApp(ui = ui, server = server)
