@@ -72,31 +72,6 @@ ui <- fluidPage(title = "Recommendations",
 
 url_start <- "https://image.tmdb.org/t/p/w500"
 
-# This function will take whichever radio option is used and
-# based on that go through either or both data files to get
-# the titles of the movies and/or series
-# data_search <- function(movie_or_series) {
-#   file = NA
-#   if (length(movie_or_series) == 1) {
-#     if ("movies" %in% movie_or_series){
-#       renderText("Looking for movies.")
-#       file = movie_data
-#     }
-#     if ("series" %in% movie_or_series) {
-#       renderText("Looking for series.")
-#       file = tv_data
-#     } 
-#   } else {
-#     # Process both files for series and movies
-#   }
-  
-  # Need to check how to pass app elements (vectors) as parameters in functions
-  # if ((file$vote_average %in% ratings) && (file$runtime %in% time*60)) {
-  #   renderText(paste(file$title), sep = "\n")
-  # }
-  
-#}
-
 # Define server logic required to draw a histogram
 server <- function(input, output) {
 
