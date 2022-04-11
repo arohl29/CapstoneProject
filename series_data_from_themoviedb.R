@@ -8,7 +8,7 @@ part_1 <- "https://api.themoviedb.org/3/tv/"
 part_3 <- "?api_key=4bc51a932fcb6f2cb7b523ea3902f439"
 
 all_data <- data.frame()
-for(i in 1:10) {
+for(i in 1:10000) {
   print(i)
   complete_url <- paste0(part_1, i, part_3)
   

@@ -11,12 +11,11 @@ library(shiny)
 library(tidyverse)
 library(bslib)
 
-# Select only columns from data file that we need
 movie_data <- read.csv("data/themoviedb-api-data.csv")
 tv_data <- read.csv("data/themoviedb-tv-data.csv")
 
 #glimpse(movie_data)
-# glimpse(tv_data)
+#glimpse(tv_data)
 timerange <- movie_data$runtime[order(movie_data$runtime)]
 range1 <- timerange[0:10]
 timerange <- tv_data$runtime[order(tv_data$episode_run_time3)]
@@ -27,48 +26,56 @@ ui <- fluidPage(title = "Recommendations",
   theme = bslib::bs_theme(version = 5, bootswatch = "quartz"),
 
   # Application title
-  titlePanel(title= span(img(src="camerareel.png",height = 100,width =100),"Now Showing",align="center")),
+  titlePanel(title= span(img(src="camerareel.png",height = 100,width =100),
+                         "Now Showing",align="center")),
 
   # Sidebar with different input button options
   sidebarLayout(position = "left",
     sidebarPanel( 
         # Options to look for movies, series, or both
-        
-        
-        # Rating can be done as a slider that allows for range
       fluidRow(
         column(width = 12,align="center",
         wellPanel(h1("What Will You Watch Next?",align="center"),
                   h4("Please make your selection below:",style = "padding-top: -50px;"),
-                  radioButtons("movieSeries", h6("Movies or Series?",style = "padding-top: -50px;"),
-                           choices = c("Movies", "Series"),selected = NA),submitButton("Search", width= 160), style = "display: block; text-align: center;")),
+                  # Radio Buttons for movie or series
+                  radioButtons("movieSeries", h6("Movies or Series?",
+                                                 style = "padding-top: -50px;"),
+                           choices = c("Movies", "Series"),selected = NA),
+                  # button to start search and produce results
+                  submitButton("Search", width= 160), style = "display: block; 
+                                                        text-align: center;")),
         column(11,align="left",
-      conditionalPanel(
-      condition = "input.movieSeries == 'Movies'",
+      conditionalPanel(condition = "input.movieSeries == 'Movies'",
+      # Select genres preferred
       checkboxGroupInput("MGenres", "Movies Genre Selection",
-                           choices = c("Comedy", "Drama", "Science Fiction", "Action","Animation", "Thriller","Horror","Mystery","Adventure")),
-      
+                        choices = c("Comedy", "Drama", "Science Fiction","Action",
+                          "Animation", "Thriller","Horror","Mystery","Adventure")),
+      # Select how much time available, or preferred, to watch
+      # This is a range
       sliderInput("time", "Time available (in minutes)",
                   min = 15, max = 180, value = c(15, 105),
                   step = 15),
-        
+      # Movie popularity rating
       sliderInput("popular", "Movie Popularity",
                   min = 0.0, max = 10.0, value = c(0.0, 10.0)),
-      
+      # Preferred language
       selectInput("MLanguage", "Language Selection",
                          choices = c("en", "es", "fr", "ja"),selected = "en")
       
     ),
     conditionalPanel(
       condition = "input.movieSeries == 'Series'",
+      # Genres preferred for series
       checkboxGroupInput("SGenres", "Series Genre Selection",
-                         choices = c("Comedy", "Drama", "Sci-Fi & Fantasy", "Action & Adventure", "Crime", "Mystery", "Kids")),
+                         choices = c("Comedy", "Drama", "Sci-Fi & Fantasy", 
+                          "Action & Adventure", "Crime", "Mystery", "Kids")),
+      # Time range available, or preferred, for watching
       sliderInput("time", "Time available (in minutes)",
-                  min = 15, max = 180, value = c(15, 105),
-                  step = 15),
+                  min = 15, max = 180, value = c(15, 105),step = 15),
+      # Series' popularity rating
       sliderInput("popular", "Series Popularity",
                   min = 0.0, max = 10.0, value = c(0.0, 10.0)),
-      
+      # Preferred language
       selectInput("SLanguage", "Language Selection",
                          choices = c("en", "es", "fr", "ja"),selected = "en"))
     )
@@ -80,84 +87,67 @@ ui <- fluidPage(title = "Recommendations",
 )
 )
 
-
-# Define server logic required to draw a histogram
+# Sever logic to show results of movies or series based on selected input
+# options, filtering data frames with those and creating a display
 server <- function(input, output) {
 
   file = reactiveVal(NA)
   end_url = reactiveVal()
-  output$welcome <- renderText("Welcome to our Movie/Series Recommendation System!
-                     Please fill out the information below so that we can
-                     give you recommendations based on your choices. Runtime for
-                     series is given by episode runtime, so you might want a smaller
-                     lower range for series!")
-  
 
   # Depending on choice, process data frames (movies or series, or both)
-  # Need a way to filter out adult movies. Some are not marked as such so we
-  # need to find a pattern in a column, maybe genres being NA can be used
-  # to filter those out
   output$tester <- renderText(
     if (length(input$movieSeries >= 0)) {
       
       if (input$movieSeries == "Series"){
+      # This block runs the "Series" option is selected; what this does is use
+      # the data frame tv_data and filter it so that it shows series based on the
+      # time range, popularity range, and genres selected. It will then show the
+      # results of that filter with the poster (if available) and their duration
+      # popularity and a link button which will redirect to a webpage that gives
+      # information of where to watch that series, if it exists in that database
       tv_data %>%
-        filter(episode_run_time <= input$time[2] & episode_run_time > input$time[1]
-               & vote_average <= input$popular[2] & vote_average > input$popular[1]
-               ,adult == FALSE, genres.name %in% input$SGenres, original_language %in% input$SLanguage) %>% 
-        arrange(episode_run_time) %>%
+        filter(episode_run_time > input$time[1] & episode_run_time <= input$time[2]
+               & vote_average > input$popular[1] & vote_average <= input$popular[2], 
+               genres.name %in% input$SGenres, original_language %in% input$SLanguage) %>% 
+          arrange(episode_run_time) %>%
           mutate(poster_path = ifelse(is.na(poster_path), '<img src="unavailable-image.jpg" width=470>',
                                       paste0('<img src="https://image.tmdb.org/t/p/w500',
                                              poster_path,'" width=470> ')),
-                 ext_link = paste0('https://www.justwatch.com/us/tv-show/',gsub('\\s','\\-',tolower(name)))) %>%
-          mutate(name = paste0('<table><tr><td align=center><h2>',name,'</h2></td></tr><tr><td style="padding:12px; margin: auto;">',poster_path,"</td><td width=120%><br><img src='timeclock.png' width=25> ",episode_run_time,
-                            '<br><img src="star.png" width=25> ',vote_average, " Points ",'<br><a href="',ext_link,'">Where to Watch</a></td></tr></table><br>')) %>%
+                 ext_link = paste0('https://www.justwatch.com/us/tv-show/',
+                                   gsub('\\s','\\-',tolower(name)))) %>%
+          mutate(name = paste0('<table><tr><td align=center><h2>',name,
+                '</h2></td></tr><tr><td style="padding:12px; margin: auto;">',
+                poster_path,"</td><td width=120%><br><img src='timeclock.png' width=25> ",
+                episode_run_time,'<br><img src="star.png" width=25> ',vote_average,
+                " Points ",'<br><form action="',ext_link,
+                '"Where to Watch" method="get" target="_blank">
+                <button type="submit">Where to Watch</button></form></td></td></tr></table><br>')) %>%
         pull(name)
       
-      
      }else if (input$movieSeries == "Movies") {
-    
+    # This block will run when the "Movies" option is selected, and will work in
+    # in a similar manner as the series'
     movie_data %>%
       filter(runtime <= input$time[2] & runtime > input$time[1]
-             & vote_average <= input$popular[2] & vote_average > input$popular[1]
-             & adult == FALSE,genres.name %in% input$MGenres, original_language %in% input$MLanguage) %>%
-      arrange(runtime) %>%
+             & vote_average <= input$popular[2] & 
+               vote_average > input$popular[1], genres.name1 %in% input$MGenres, 
+             original_language %in% input$MLanguage, !is.na(backdrop_path)) %>% 
+         arrange(runtime) %>%
          mutate(poster_path = ifelse(is.na(poster_path), '<img src="unavailable-image.jpg" width=470>',
                                      paste0('<img src="https://image.tmdb.org/t/p/w500',
                                             poster_path,'" width=470> ')),
-                ext_link = paste0('https://www.justwatch.com/us/movie/',gsub('\\s','\\-',tolower(title)))) %>%
-         mutate(title = paste0('<table><tr><td align=center><h2>',title,'</h2></td></tr><tr><td style="padding:12px; margin: auto;">',poster_path,"</td><td width=120%><img src='timeclock.png' width=25> ",runtime,
-                              " Minutes",'<br><img src="star.png" width=25> ',vote_average, " Points ",'<br><a href="',ext_link,'">Where to Watch</a></td></tr></table><br>')) %>% 
+                ext_link = paste0('https://www.justwatch.com/us/movie/',
+                                  gsub('\\s','\\-',tolower(title)))) %>%
+         mutate(title = paste0('<table><tr><td align=center><h2>',title,
+                '</h2></td></tr><tr><td style="padding:12px; margin: auto;">',
+                poster_path,"</td><td width=120%><img src='timeclock.png' width=25> ",
+                runtime," Minutes",'<br><img src="star.png" width=25> ',vote_average,
+                " Points ",'<br><form action="',ext_link,
+                '"Where to Watch" method="get" target="_blank">
+                <button type="submit">Where to Watch</button></form></td></tr></table><br>')) %>% 
       pull(title)
-    } else { # This could be changed, having no options will still run something
-    # Might put these as separate functions to avoid repeating code (if possible)
-      tv_data %>%
-      filter(episode_run_time <= input$time[2] & episode_run_time > input$time[1]
-             & vote_average <= input$popular[2] & vote_average > input$popular[1]
-             & adult == FALSE) %>%
-      arrange(episode_run_time) %>% 
-        mutate(poster_path = ifelse(is.na(poster_path), '<img src="unavailable_image.jpg">',
-                                    paste0('<img src="https://image.tmdb.org/t/p/w500',
-                                      poster_path,'" width=470> ')),
-        ext_link = paste0('https://www.justwatch.com/us/movie/',gsub('\\s','\\-',tolower(name)))) %>%
-    mutate(name = paste0('<table><tr><td align=center><h2>',name,'</h2></td></tr><tr><td style="padding:12px; margin: auto;">',poster_path,"</td><td width=120%><img src='timeclock.png' width=25> ",episode_run_time,
-                          " Minutes",'<br><img src="star.png" width=25> ',vote_average, " Points ",'<br><a href="',ext_link,'">Where to Watch</a></td></tr></table><br>')) %>%
-      pull(name)
-
-      movie_data %>%
-        filter(runtime <= input$time[2] & runtime > input$time[1]
-               & vote_average <= input$popular[2] & vote_average > input$popular[1]
-               & adult == FALSE,genres.name %in% input$MGenres, original_language %in% input$MLanguage) %>%
-        arrange(runtime) %>%
-        mutate(poster_path = ifelse(is.na(poster_path), '<img src="unavailable-image.jpg" width=470>',
-                                    paste0('<img src="https://image.tmdb.org/t/p/w500',
-                                           poster_path,'" width=470> ')),
-               ext_link = paste0('https://www.justwatch.com/us/movie/',gsub('\\s','\\-',tolower(title)))) %>%
-        mutate(title = paste0('<table><tr><td align=center><h2>',title,'</h2></td></tr><tr><td style="padding:12px; margin: auto;">',poster_path,"</td><td width=120%><img src='timeclock.png' width=25> ",runtime,
-                              " Minutes",'<br><img src="star.png" width=25> ',vote_average, " Points ",'<br><a href="',ext_link,'">Where to Watch</a></td></tr></table><br>')) %>% 
-        pull(title)
-}   })
-  
+       }
+      })
   
 }
 
