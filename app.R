@@ -11,6 +11,8 @@
 library(shiny)
 library(tidyverse)
 library(bslib)
+library(spsComps)
+
 
 # Our Datasets for both tv and movies
 movie_data <- read.csv("data/themoviedb-api-data.csv")
@@ -28,8 +30,9 @@ ui <- fluidPage(title = "Recommendations",
   sidebarLayout(position = "left",
     sidebarPanel( 
         # Options to look for movies, series, or both
+    
       fluidRow(
-        column(width = 12,align="center",
+        column(width = 12,align="center", spsGoTop(id = "GotoTop",right = "5%",bottom = "5%",icon = icon("caret-square-up","fa-3x")),
         wellPanel(h1("What Will You Watch Next?",align="center"),
                   h4("Please make your selection below:",style = "padding-top: -50px;"),
                   
