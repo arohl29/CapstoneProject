@@ -32,7 +32,7 @@ ui <- fluidPage(title = "Recommendations",
         # Options to look for movies, series, or both
     
       fluidRow(
-        column(width = 12,align="center", spsGoTop(id = "GotoTop",right = "5%",bottom = "5%",icon = icon("caret-square-up","fa-3x")),
+        column(width = 12,align="center",
         wellPanel(h1("What Will You Watch Next?",align="center"),
                   h4("Please make your selection below:",style = "padding-top: -50px;"),
                   
@@ -80,7 +80,8 @@ ui <- fluidPage(title = "Recommendations",
     )
     )), column(8,align="left",
     mainPanel(
-      htmlOutput("tester")
+      htmlOutput("tester"),
+      spsGoTop("GotoTop",right = "5%",bottom = "5%",icon = icon("caret-square-up","fa-3x"))
     )
   )
 )
