@@ -7,19 +7,14 @@
 #    http://shiny.rstudio.com/
 #
 
+#loaded in libraries
 library(shiny)
 library(tidyverse)
 library(bslib)
 
+# Our Datasets for both tv and movies
 movie_data <- read.csv("data/themoviedb-api-data.csv")
 tv_data <- read.csv("data/themoviedb-tv-data.csv")
-
-#glimpse(movie_data)
-#glimpse(tv_data)
-timerange <- movie_data$runtime[order(movie_data$runtime)]
-range1 <- timerange[0:10]
-timerange <- tv_data$runtime[order(tv_data$episode_run_time3)]
-range2 <- timerange[0:10]
 
 # Define UI for application
 ui <- fluidPage(title = "Recommendations",
@@ -37,6 +32,7 @@ ui <- fluidPage(title = "Recommendations",
         column(width = 12,align="center",
         wellPanel(h1("What Will You Watch Next?",align="center"),
                   h4("Please make your selection below:",style = "padding-top: -50px;"),
+                  
                   # Radio Buttons for movie or series
                   radioButtons("movieSeries", h6("Movies or Series?",
                                                  style = "padding-top: -50px;"),
@@ -46,36 +42,36 @@ ui <- fluidPage(title = "Recommendations",
                                                         text-align: center;")),
         column(11,align="left",
       conditionalPanel(condition = "input.movieSeries == 'Movies'",
-      # Select genres preferred
+  # Select genres preferred
       checkboxGroupInput("MGenres", "Movies Genre Selection",
                         choices = c("Comedy", "Drama", "Science Fiction","Action",
                           "Animation", "Thriller","Horror","Mystery","Adventure")),
-      # Select how much time available, or preferred, to watch
-      # This is a range
+  # Select how much time available, or preferred, to watch
+  # This is a range
       sliderInput("time", "Time available (in minutes)",
                   min = 15, max = 180, value = c(15, 105),
                   step = 15),
-      # Movie popularity rating
+  # Movie popularity rating
       sliderInput("popular", "Movie Popularity",
                   min = 0.0, max = 10.0, value = c(0.0, 10.0)),
-      # Preferred language
+  # Preferred language
       selectInput("MLanguage", "Language Selection",
                          choices = c("en", "es", "fr", "ja"),selected = "en")
       
     ),
     conditionalPanel(
       condition = "input.movieSeries == 'Series'",
-      # Genres preferred for series
+  # Genres preferred for series
       checkboxGroupInput("SGenres", "Series Genre Selection",
                          choices = c("Comedy", "Drama", "Sci-Fi & Fantasy", 
                           "Action & Adventure", "Crime", "Mystery", "Kids")),
-      # Time range available, or preferred, for watching
+  # Time range available, or preferred, for watching
       sliderInput("time", "Time available (in minutes)",
                   min = 15, max = 180, value = c(15, 105),step = 15),
-      # Series' popularity rating
+  # Series' popularity rating
       sliderInput("popular", "Series Popularity",
                   min = 0.0, max = 10.0, value = c(0.0, 10.0)),
-      # Preferred language
+  # Preferred language
       selectInput("SLanguage", "Language Selection",
                          choices = c("en", "es", "fr", "ja"),selected = "en"))
     )
@@ -94,7 +90,7 @@ server <- function(input, output) {
   file = reactiveVal(NA)
   end_url = reactiveVal()
 
-  # Depending on choice, process data frames (movies or series, or both)
+# Depending on choice, process data frames (movies or series, or both)
   output$tester <- renderText(
     if (length(input$movieSeries >= 0)) {
       
