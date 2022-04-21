@@ -118,7 +118,7 @@ server <- function(input, output) {
           mutate(name = paste0('<table><tr><td align=center><h2>',name,
                 '</h2></td></tr><tr><td style="padding:12px; margin: auto;">',
                 poster_path,"</td><td width=120%><br><img src='timeclock.png' width=25> ",
-                episode_run_time,'<br><img src="star.png" width=25> ',vote_average,
+                episode_run_time,' minutes<br><img src="star.png" width=25> ',vote_average,
                 " Points ",'<br><form action="',ext_link,
                 '"Where to Watch" method="get" target="_blank">
                 <button type="submit">Where to Watch</button></form></td></td></tr></table><br>')) %>%
@@ -137,11 +137,11 @@ server <- function(input, output) {
                                      paste0('<img src="https://image.tmdb.org/t/p/w500',
                                             poster_path,'" width=470> ')),
                 ext_link = paste0('https://www.justwatch.com/us/movie/',
-                                  gsub('\\s','\\-',tolower(title)))) %>%
+                                  gsub('\\s','\\-', gsub('[[:punct:]]','',tolower(title))))) %>%
          mutate(title = paste0('<table><tr><td align=center><h2>',title,
                 '</h2></td></tr><tr><td style="padding:12px; margin: auto;">',
                 poster_path,"</td><td width=120%><img src='timeclock.png' width=25> ",
-                runtime," Minutes",'<br><img src="star.png" width=25> ',vote_average,
+                runtime," minutes",'<br><img src="star.png" width=25> ',vote_average,
                 " Points ",'<br><form action="',ext_link,
                 '"Where to Watch" method="get" target="_blank">
                 <button type="submit">Where to Watch</button></form></td></tr></table><br>')) %>% 
